@@ -1,29 +1,22 @@
 // ============================================
 // EWS WEEKLY REPORTS - VERCEL SERVERLESS API
-// Optimiert für Vercel Deployment
+// Mit Neon Postgres Integration
 // ============================================
 
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const bodyParser = require('body-parser');
+const { eq, and, desc, asc } = require('drizzle-orm');
+
+// Database
+const { getDb, checkHealth } = require('./db/connection');
+const schema = require('./db/schema');
 
 // Initialize Express App
 const app = express();
-
-// ============================================
-// IN-MEMORY DATABASE
-// Note: In production, use a persistent database like Vercel Postgres or MongoDB
-// ============================================
-let database = {
-    reports: [],
-    tasks: [],
-    users: [],
-    templates: [],
-    archive: [],
-    comments: []
-};
 
 // ============================================
 // MIDDLEWARE
@@ -52,16 +45,17 @@ function getWeekNumber(date = new Date()) {
 }
 
 // ============================================
-// API ROUTES
+// HEALTH CHECK
 // ============================================
+app.get('/api/health', async (req, res) => {
+    const dbHealth = await checkHealth();
 
-// Health Check
-app.get('/api/health', (req, res) => {
     res.json({
-        status: 'healthy',
+        status: dbHealth.status === 'healthy' ? 'healthy' : 'degraded',
         timestamp: new Date().toISOString(),
         version: '3.0.0',
-        platform: 'Vercel'
+        platform: 'Vercel',
+        database: dbHealth
     });
 });
 
@@ -70,85 +64,112 @@ app.get('/api/health', (req, res) => {
 // ============================================
 
 // Get all reports
-app.get('/api/reports', (req, res) => {
+app.get('/api/reports', async (req, res) => {
     try {
+        const db = getDb();
         const { department, week, status, limit = 100 } = req.query;
 
-        let filtered = database.reports;
+        // Build query conditions
+        const conditions = [];
+        if (department) conditions.push(eq(schema.reports.department, department));
+        if (week) conditions.push(eq(schema.reports.week, week));
+        if (status) conditions.push(eq(schema.reports.status, status));
 
-        if (department) {
-            filtered = filtered.filter(r => r.department === department);
-        }
-        if (week) {
-            filtered = filtered.filter(r => r.week === week);
-        }
-        if (status) {
-            filtered = filtered.filter(r => r.status === status);
+        // Execute query
+        let query = db.select().from(schema.reports);
+
+        if (conditions.length > 0) {
+            query = query.where(and(...conditions));
         }
 
-        filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        filtered = filtered.slice(0, parseInt(limit));
+        query = query.orderBy(desc(schema.reports.createdAt)).limit(parseInt(limit));
+
+        const reports = await query;
 
         res.json({
             success: true,
-            data: filtered,
-            count: filtered.length,
-            total: database.reports.length
+            data: reports,
+            count: reports.length
         });
     } catch (error) {
         console.error('Error fetching reports:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to fetch reports'
+            error: 'Failed to fetch reports',
+            details: error.message
         });
     }
 });
 
 // Get single report
-app.get('/api/reports/:id', (req, res) => {
+app.get('/api/reports/:id', async (req, res) => {
     try {
-        const report = database.reports.find(r => r.id === req.params.id);
+        const db = getDb();
 
-        if (!report) {
+        // Get report
+        const reports = await db
+            .select()
+            .from(schema.reports)
+            .where(eq(schema.reports.id, req.params.id))
+            .limit(1);
+
+        if (reports.length === 0) {
             return res.status(404).json({
                 success: false,
                 error: 'Report not found'
             });
         }
 
-        const comments = database.comments.filter(c => c.reportId === req.params.id);
+        // Get comments for this report
+        const comments = await db
+            .select()
+            .from(schema.comments)
+            .where(eq(schema.comments.reportId, req.params.id));
 
         res.json({
             success: true,
-            data: { ...report, comments }
+            data: { ...reports[0], comments }
         });
     } catch (error) {
         console.error('Error fetching report:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to fetch report'
+            error: 'Failed to fetch report',
+            details: error.message
         });
     }
 });
 
 // Create new report
-app.post('/api/reports', (req, res) => {
+app.post('/api/reports', async (req, res) => {
     try {
-        const report = {
-            id: generateId(),
-            ...req.body,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        };
+        const db = getDb();
 
-        if (!report.week || !report.department) {
+        // Validation
+        if (!req.body.week || !req.body.department) {
             return res.status(400).json({
                 success: false,
                 error: 'Week and department are required'
             });
         }
 
-        database.reports.push(report);
+        const report = {
+            id: generateId(),
+            week: req.body.week,
+            department: req.body.department,
+            status: req.body.status || 'green',
+            kpis: req.body.kpis || {},
+            achievements: req.body.achievements,
+            challenges: req.body.challenges,
+            nextWeekPlans: req.body.nextWeekPlans,
+            notes: req.body.notes,
+            createdBy: req.body.createdBy,
+            createdAt: new Date(),
+            updatedAt: new Date()
+        };
+
+        // Insert into database
+        await db.insert(schema.reports).values(report);
 
         res.status(201).json({
             success: true,
@@ -158,65 +179,102 @@ app.post('/api/reports', (req, res) => {
         console.error('Error creating report:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to create report'
+            error: 'Failed to create report',
+            details: error.message
         });
     }
 });
 
 // Update report
-app.put('/api/reports/:id', (req, res) => {
+app.put('/api/reports/:id', async (req, res) => {
     try {
-        const index = database.reports.findIndex(r => r.id === req.params.id);
+        const db = getDb();
 
-        if (index === -1) {
+        // Check if report exists
+        const existing = await db
+            .select()
+            .from(schema.reports)
+            .where(eq(schema.reports.id, req.params.id))
+            .limit(1);
+
+        if (existing.length === 0) {
             return res.status(404).json({
                 success: false,
                 error: 'Report not found'
             });
         }
 
-        database.reports[index] = {
-            ...database.reports[index],
+        // Prepare update data
+        const updateData = {
             ...req.body,
-            updatedAt: new Date().toISOString()
+            updatedAt: new Date()
         };
+
+        // Remove id and timestamps from update data
+        delete updateData.id;
+        delete updateData.createdAt;
+
+        // Update
+        await db
+            .update(schema.reports)
+            .set(updateData)
+            .where(eq(schema.reports.id, req.params.id));
+
+        // Fetch updated report
+        const updated = await db
+            .select()
+            .from(schema.reports)
+            .where(eq(schema.reports.id, req.params.id))
+            .limit(1);
 
         res.json({
             success: true,
-            data: database.reports[index]
+            data: updated[0]
         });
     } catch (error) {
         console.error('Error updating report:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to update report'
+            error: 'Failed to update report',
+            details: error.message
         });
     }
 });
 
 // Delete report
-app.delete('/api/reports/:id', (req, res) => {
+app.delete('/api/reports/:id', async (req, res) => {
     try {
-        const index = database.reports.findIndex(r => r.id === req.params.id);
+        const db = getDb();
 
-        if (index === -1) {
+        // Check if exists
+        const existing = await db
+            .select()
+            .from(schema.reports)
+            .where(eq(schema.reports.id, req.params.id))
+            .limit(1);
+
+        if (existing.length === 0) {
             return res.status(404).json({
                 success: false,
                 error: 'Report not found'
             });
         }
 
-        const deleted = database.reports.splice(index, 1)[0];
+        // Delete
+        await db
+            .delete(schema.reports)
+            .where(eq(schema.reports.id, req.params.id));
 
         res.json({
             success: true,
-            data: deleted
+            data: existing[0]
         });
     } catch (error) {
         console.error('Error deleting report:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to delete report'
+            error: 'Failed to delete report',
+            details: error.message
         });
     }
 });
@@ -225,53 +283,67 @@ app.delete('/api/reports/:id', (req, res) => {
 // TASKS API
 // ============================================
 
-app.get('/api/tasks', (req, res) => {
+// Get all tasks
+app.get('/api/tasks', async (req, res) => {
     try {
+        const db = getDb();
         const { status, assignee, priority } = req.query;
 
-        let filtered = database.tasks;
+        const conditions = [];
+        if (status) conditions.push(eq(schema.tasks.status, status));
+        if (assignee) conditions.push(eq(schema.tasks.assignee, assignee));
+        if (priority) conditions.push(eq(schema.tasks.priority, priority));
 
-        if (status) {
-            filtered = filtered.filter(t => t.status === status);
+        let query = db.select().from(schema.tasks);
+
+        if (conditions.length > 0) {
+            query = query.where(and(...conditions));
         }
-        if (assignee) {
-            filtered = filtered.filter(t => t.assignee === assignee);
-        }
-        if (priority) {
-            filtered = filtered.filter(t => t.priority === priority);
-        }
+
+        const tasks = await query.orderBy(desc(schema.tasks.createdAt));
 
         res.json({
             success: true,
-            data: filtered,
-            count: filtered.length
+            data: tasks,
+            count: tasks.length
         });
     } catch (error) {
         console.error('Error fetching tasks:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to fetch tasks'
+            error: 'Failed to fetch tasks',
+            details: error.message
         });
     }
 });
 
-app.post('/api/tasks', (req, res) => {
+// Create new task
+app.post('/api/tasks', async (req, res) => {
     try {
-        const task = {
-            id: generateId(),
-            ...req.body,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        };
+        const db = getDb();
 
-        if (!task.title) {
+        if (!req.body.title) {
             return res.status(400).json({
                 success: false,
                 error: 'Title is required'
             });
         }
 
-        database.tasks.push(task);
+        const task = {
+            id: generateId(),
+            title: req.body.title,
+            description: req.body.description,
+            status: req.body.status || 'todo',
+            priority: req.body.priority || 'medium',
+            assignee: req.body.assignee,
+            department: req.body.department,
+            dueDate: req.body.dueDate ? new Date(req.body.dueDate) : null,
+            reportId: req.body.reportId,
+            createdAt: new Date(),
+            updatedAt: new Date()
+        };
+
+        await db.insert(schema.tasks).values(task);
 
         res.status(201).json({
             success: true,
@@ -281,63 +353,100 @@ app.post('/api/tasks', (req, res) => {
         console.error('Error creating task:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to create task'
+            error: 'Failed to create task',
+            details: error.message
         });
     }
 });
 
-app.put('/api/tasks/:id', (req, res) => {
+// Update task
+app.put('/api/tasks/:id', async (req, res) => {
     try {
-        const index = database.tasks.findIndex(t => t.id === req.params.id);
+        const db = getDb();
 
-        if (index === -1) {
+        const existing = await db
+            .select()
+            .from(schema.tasks)
+            .where(eq(schema.tasks.id, req.params.id))
+            .limit(1);
+
+        if (existing.length === 0) {
             return res.status(404).json({
                 success: false,
                 error: 'Task not found'
             });
         }
 
-        database.tasks[index] = {
-            ...database.tasks[index],
+        const updateData = {
             ...req.body,
-            updatedAt: new Date().toISOString()
+            updatedAt: new Date()
         };
+
+        delete updateData.id;
+        delete updateData.createdAt;
+
+        // If status changes to 'done', set completedAt
+        if (updateData.status === 'done' && existing[0].status !== 'done') {
+            updateData.completedAt = new Date();
+        }
+
+        await db
+            .update(schema.tasks)
+            .set(updateData)
+            .where(eq(schema.tasks.id, req.params.id));
+
+        const updated = await db
+            .select()
+            .from(schema.tasks)
+            .where(eq(schema.tasks.id, req.params.id))
+            .limit(1);
 
         res.json({
             success: true,
-            data: database.tasks[index]
+            data: updated[0]
         });
     } catch (error) {
         console.error('Error updating task:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to update task'
+            error: 'Failed to update task',
+            details: error.message
         });
     }
 });
 
-app.delete('/api/tasks/:id', (req, res) => {
+// Delete task
+app.delete('/api/tasks/:id', async (req, res) => {
     try {
-        const index = database.tasks.findIndex(t => t.id === req.params.id);
+        const db = getDb();
 
-        if (index === -1) {
+        const existing = await db
+            .select()
+            .from(schema.tasks)
+            .where(eq(schema.tasks.id, req.params.id))
+            .limit(1);
+
+        if (existing.length === 0) {
             return res.status(404).json({
                 success: false,
                 error: 'Task not found'
             });
         }
 
-        const deleted = database.tasks.splice(index, 1)[0];
+        await db
+            .delete(schema.tasks)
+            .where(eq(schema.tasks.id, req.params.id));
 
         res.json({
             success: true,
-            data: deleted
+            data: existing[0]
         });
     } catch (error) {
         console.error('Error deleting task:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to delete task'
+            error: 'Failed to delete task',
+            details: error.message
         });
     }
 });
@@ -346,21 +455,27 @@ app.delete('/api/tasks/:id', (req, res) => {
 // ANALYTICS API
 // ============================================
 
-app.get('/api/analytics/kpi', (req, res) => {
+app.get('/api/analytics/kpi', async (req, res) => {
     try {
-        const { timeRange = 12, department } = req.query;
+        const db = getDb();
+        const { department } = req.query;
 
-        let reports = database.reports;
+        let query = db.select().from(schema.reports);
 
         if (department && department !== 'all') {
-            reports = reports.filter(r => r.department === department);
+            query = query.where(eq(schema.reports.department, department));
         }
 
+        const reports = await query;
+
+        // Aggregate KPIs
         const kpiData = reports.reduce((acc, report) => {
-            Object.entries(report.kpis || {}).forEach(([key, value]) => {
-                if (!acc[key]) acc[key] = [];
-                acc[key].push(value);
-            });
+            if (report.kpis) {
+                Object.entries(report.kpis).forEach(([key, value]) => {
+                    if (!acc[key]) acc[key] = [];
+                    acc[key].push(value);
+                });
+            }
             return acc;
         }, {});
 
@@ -381,30 +496,38 @@ app.get('/api/analytics/kpi', (req, res) => {
         console.error('Error fetching KPI analytics:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to fetch analytics'
+            error: 'Failed to fetch analytics',
+            details: error.message
         });
     }
 });
 
-app.get('/api/analytics/departments', (req, res) => {
+app.get('/api/analytics/departments', async (req, res) => {
     try {
+        const db = getDb();
         const departments = ['Vertrieb', 'Auftragsabwicklung', 'Lager', 'Kundenservice'];
 
-        const performance = departments.map(dept => {
-            const deptReports = database.reports.filter(r => r.department === dept);
-            const statusCounts = {
-                green: deptReports.filter(r => r.status === 'green').length,
-                yellow: deptReports.filter(r => r.status === 'yellow').length,
-                red: deptReports.filter(r => r.status === 'red').length
-            };
+        const performance = await Promise.all(
+            departments.map(async (dept) => {
+                const deptReports = await db
+                    .select()
+                    .from(schema.reports)
+                    .where(eq(schema.reports.department, dept));
 
-            return {
-                department: dept,
-                reportCount: deptReports.length,
-                statusCounts,
-                score: (statusCounts.green * 100 + statusCounts.yellow * 50) / Math.max(deptReports.length, 1)
-            };
-        });
+                const statusCounts = {
+                    green: deptReports.filter(r => r.status === 'green').length,
+                    yellow: deptReports.filter(r => r.status === 'yellow').length,
+                    red: deptReports.filter(r => r.status === 'red').length
+                };
+
+                return {
+                    department: dept,
+                    reportCount: deptReports.length,
+                    statusCounts,
+                    score: (statusCounts.green * 100 + statusCounts.yellow * 50) / Math.max(deptReports.length, 1)
+                };
+            })
+        );
 
         res.json({
             success: true,
@@ -414,25 +537,29 @@ app.get('/api/analytics/departments', (req, res) => {
         console.error('Error fetching department analytics:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to fetch department analytics'
+            error: 'Failed to fetch department analytics',
+            details: error.message
         });
     }
 });
 
-app.get('/api/analytics/tasks', (req, res) => {
+app.get('/api/analytics/tasks', async (req, res) => {
     try {
+        const db = getDb();
+        const allTasks = await db.select().from(schema.tasks);
+
         const stats = {
-            total: database.tasks.length,
-            todo: database.tasks.filter(t => t.status === 'todo').length,
-            inProgress: database.tasks.filter(t => t.status === 'inProgress').length,
-            done: database.tasks.filter(t => t.status === 'done').length,
-            overdue: database.tasks.filter(t =>
+            total: allTasks.length,
+            todo: allTasks.filter(t => t.status === 'todo').length,
+            inProgress: allTasks.filter(t => t.status === 'inProgress').length,
+            done: allTasks.filter(t => t.status === 'done').length,
+            overdue: allTasks.filter(t =>
                 t.dueDate && new Date(t.dueDate) < new Date() && t.status !== 'done'
             ).length,
             byPriority: {
-                high: database.tasks.filter(t => t.priority === 'high').length,
-                medium: database.tasks.filter(t => t.priority === 'medium').length,
-                low: database.tasks.filter(t => t.priority === 'low').length
+                high: allTasks.filter(t => t.priority === 'high').length,
+                medium: allTasks.filter(t => t.priority === 'medium').length,
+                low: allTasks.filter(t => t.priority === 'low').length
             }
         };
 
@@ -444,7 +571,8 @@ app.get('/api/analytics/tasks', (req, res) => {
         console.error('Error fetching task analytics:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to fetch task analytics'
+            error: 'Failed to fetch task analytics',
+            details: error.message
         });
     }
 });
@@ -453,9 +581,14 @@ app.get('/api/analytics/tasks', (req, res) => {
 // COMMENTS API
 // ============================================
 
-app.get('/api/reports/:reportId/comments', (req, res) => {
+app.get('/api/reports/:reportId/comments', async (req, res) => {
     try {
-        const comments = database.comments.filter(c => c.reportId === req.params.reportId);
+        const db = getDb();
+        const comments = await db
+            .select()
+            .from(schema.comments)
+            .where(eq(schema.comments.reportId, req.params.reportId))
+            .orderBy(asc(schema.comments.createdAt));
 
         res.json({
             success: true,
@@ -465,28 +598,33 @@ app.get('/api/reports/:reportId/comments', (req, res) => {
         console.error('Error fetching comments:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to fetch comments'
+            error: 'Failed to fetch comments',
+            details: error.message
         });
     }
 });
 
-app.post('/api/reports/:reportId/comments', (req, res) => {
+app.post('/api/reports/:reportId/comments', async (req, res) => {
     try {
-        const comment = {
-            id: generateId(),
-            reportId: req.params.reportId,
-            ...req.body,
-            createdAt: new Date().toISOString()
-        };
+        const db = getDb();
 
-        if (!comment.text) {
+        if (!req.body.text) {
             return res.status(400).json({
                 success: false,
                 error: 'Comment text is required'
             });
         }
 
-        database.comments.push(comment);
+        const comment = {
+            id: generateId(),
+            reportId: req.params.reportId,
+            text: req.body.text,
+            author: req.body.author,
+            authorEmail: req.body.authorEmail,
+            createdAt: new Date()
+        };
+
+        await db.insert(schema.comments).values(comment);
 
         res.status(201).json({
             success: true,
@@ -496,7 +634,8 @@ app.post('/api/reports/:reportId/comments', (req, res) => {
         console.error('Error adding comment:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to add comment'
+            error: 'Failed to add comment',
+            details: error.message
         });
     }
 });
@@ -505,30 +644,42 @@ app.post('/api/reports/:reportId/comments', (req, res) => {
 // TEMPLATES API
 // ============================================
 
-app.get('/api/templates', (req, res) => {
+app.get('/api/templates', async (req, res) => {
     try {
+        const db = getDb();
+        const templates = await db.select().from(schema.templates);
+
         res.json({
             success: true,
-            data: database.templates
+            data: templates
         });
     } catch (error) {
         console.error('Error fetching templates:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to fetch templates'
+            error: 'Failed to fetch templates',
+            details: error.message
         });
     }
 });
 
-app.post('/api/templates', (req, res) => {
+app.post('/api/templates', async (req, res) => {
     try {
+        const db = getDb();
+
         const template = {
             id: generateId(),
-            ...req.body,
-            createdAt: new Date().toISOString()
+            name: req.body.name,
+            description: req.body.description,
+            department: req.body.department,
+            content: req.body.content,
+            isDefault: req.body.isDefault || false,
+            createdBy: req.body.createdBy,
+            createdAt: new Date(),
+            updatedAt: new Date()
         };
 
-        database.templates.push(template);
+        await db.insert(schema.templates).values(template);
 
         res.status(201).json({
             success: true,
@@ -538,7 +689,8 @@ app.post('/api/templates', (req, res) => {
         console.error('Error creating template:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to create template'
+            error: 'Failed to create template',
+            details: error.message
         });
     }
 });
@@ -547,50 +699,66 @@ app.post('/api/templates', (req, res) => {
 // ARCHIVE API
 // ============================================
 
-app.post('/api/archive/auto', (req, res) => {
+app.post('/api/archive/auto', async (req, res) => {
     try {
+        const db = getDb();
         const twelveWeeksAgo = new Date();
         twelveWeeksAgo.setDate(twelveWeeksAgo.getDate() - 84);
 
-        const toArchive = database.reports.filter(r =>
-            new Date(r.createdAt) < twelveWeeksAgo
-        );
+        // Find old reports
+        const oldReports = await db
+            .select()
+            .from(schema.reports)
+            .where(eq(schema.reports.createdAt, twelveWeeksAgo));
 
-        toArchive.forEach(report => {
-            database.archive.push({
-                ...report,
-                archivedAt: new Date().toISOString()
+        // Archive them
+        for (const report of oldReports) {
+            await db.insert(schema.archive).values({
+                id: generateId(),
+                originalId: report.id,
+                week: report.week,
+                department: report.department,
+                data: report,
+                archivedAt: new Date(),
+                archivedBy: req.body.archivedBy || 'system'
             });
-        });
 
-        database.reports = database.reports.filter(r =>
-            new Date(r.createdAt) >= twelveWeeksAgo
-        );
+            // Delete from reports
+            await db.delete(schema.reports).where(eq(schema.reports.id, report.id));
+        }
 
         res.json({
             success: true,
-            archived: toArchive.length
+            archived: oldReports.length
         });
     } catch (error) {
         console.error('Error auto-archiving:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to auto-archive'
+            error: 'Failed to auto-archive',
+            details: error.message
         });
     }
 });
 
-app.get('/api/archive', (req, res) => {
+app.get('/api/archive', async (req, res) => {
     try {
+        const db = getDb();
+        const archived = await db
+            .select()
+            .from(schema.archive)
+            .orderBy(desc(schema.archive.archivedAt));
+
         res.json({
             success: true,
-            data: database.archive
+            data: archived
         });
     } catch (error) {
         console.error('Error fetching archive:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to fetch archive'
+            error: 'Failed to fetch archive',
+            details: error.message
         });
     }
 });
@@ -599,18 +767,35 @@ app.get('/api/archive', (req, res) => {
 // EXPORT API
 // ============================================
 
-app.get('/api/export/json', (req, res) => {
+app.get('/api/export/json', async (req, res) => {
     try {
+        const db = getDb();
+
+        const [reports, tasks, comments, templates, archive] = await Promise.all([
+            db.select().from(schema.reports),
+            db.select().from(schema.tasks),
+            db.select().from(schema.comments),
+            db.select().from(schema.templates),
+            db.select().from(schema.archive)
+        ]);
+
         res.json({
             success: true,
-            data: database,
+            data: {
+                reports,
+                tasks,
+                comments,
+                templates,
+                archive
+            },
             exportDate: new Date().toISOString()
         });
     } catch (error) {
         console.error('Error exporting data:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to export data'
+            error: 'Failed to export data',
+            details: error.message
         });
     }
 });
@@ -630,7 +815,8 @@ app.use((err, req, res, next) => {
     console.error('Unhandled error:', err);
     res.status(500).json({
         success: false,
-        error: 'Internal server error'
+        error: 'Internal server error',
+        details: err.message
     });
 });
 
