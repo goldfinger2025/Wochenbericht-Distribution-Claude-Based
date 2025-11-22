@@ -1,39 +1,19 @@
 {
   "version": 2,
   "name": "ews-weekly-reports",
-  "builds": [
+  "rewrites": [
     {
-      "src": "server.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "wochenbericht-ultimate.html",
-      "use": "@vercel/static"
+      "source": "/api/(.*)",
+      "destination": "/api"
     }
   ],
-  "routes": [
+  "redirects": [
     {
-      "src": "/api/(.*)",
-      "dest": "server.js"
-    },
-    {
-      "src": "/(.*\\.(css|js|json|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))",
-      "dest": "/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "wochenbericht-ultimate.html"
+      "source": "/index.html",
+      "destination": "/",
+      "permanent": true
     }
   ],
-  "env": {
-    "NODE_ENV": "production"
-  },
-  "regions": ["fra1"],
-  "github": {
-    "enabled": true,
-    "autoAlias": true,
-    "silent": false
-  },
   "headers": [
     {
       "source": "/api/(.*)",
@@ -57,7 +37,7 @@
       ]
     },
     {
-      "source": "/(.*\\.(css|js|png|jpg|jpeg|gif|svg|ico))",
+      "source": "/(.*\\.(css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))",
       "headers": [
         {
           "key": "Cache-Control",
@@ -66,12 +46,15 @@
       ]
     }
   ],
-  "redirects": [
-    {
-      "source": "/index.html",
-      "destination": "/"
-    }
-  ],
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "regions": ["fra1"],
+  "github": {
+    "enabled": true,
+    "autoAlias": true,
+    "silent": false
+  },
   "cleanUrls": true,
   "trailingSlash": false
 }
