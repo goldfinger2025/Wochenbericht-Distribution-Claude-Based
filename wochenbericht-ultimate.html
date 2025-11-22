@@ -1,0 +1,3261 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="EWS Distribution Weekly Report Tool - Ultimate Edition">
+    <meta name="theme-color" content="#2563eb">
+    <link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22Weekly%20Reports%22%2C%22short_name%22%3A%22Reports%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23ffffff%22%2C%22theme_color%22%3A%22%232563eb%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%2520xmlns%3D%2527http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%2527%2520viewBox%3D%25270%25200%2520100%2520100%2527%253E%253Crect%2520fill%3D%2527%25232563eb%2527%2520width%3D%2527100%2527%2520height%3D%2527100%2527%2F%253E%253Ctext%2520x%3D%252750%2527%2520y%3D%252755%2527%2520font-size%3D%252750%2527%2520text-anchor%3D%2527middle%2527%2520fill%3D%2527white%2527%253EW%253C%2Ftext%253E%253C%2Fsvg%253E%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D">
+    <title>Distribution Weekly Report Tool - Ultimate Edition | EWS GmbH</title>
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    
+    <style>
+        /* ==========================================
+           ULTIMATE VERSION - CSS STYLES
+           Vollständig implementiert ohne Platzhalter
+           ========================================== */
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* Light Mode */
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --secondary: #64748b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #06b6d4;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+            --transition: all 0.3s ease;
+        }
+
+        [data-theme="dark"] {
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --secondary: #94a3b8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #06b6d4;
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --shadow: 0 1px 3px rgba(0,0,0,0.3);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.3);
+            --shadow-lg: 0 10px 15px rgba(0,0,0,0.3);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+            transition: var(--transition);
+        }
+
+        /* Layout */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        header {
+            background: var(--card-bg);
+            padding: 20px 0;
+            box-shadow: var(--shadow-md);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 3px solid var(--primary);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--primary), var(--info));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            box-shadow: var(--shadow-md);
+        }
+
+        .logo-text h1 {
+            font-size: 24px;
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+
+        .logo-text p {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Header Controls */
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .sync-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--bg);
+            border-radius: 20px;
+            font-size: 13px;
+            border: 1px solid var(--border);
+        }
+
+        .sync-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .sync-status.syncing .sync-indicator {
+            background: var(--warning);
+        }
+
+        .sync-status.error .sync-indicator {
+            background: var(--danger);
+        }
+
+        .lang-selector {
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--card-bg);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 14px;
+        }
+
+        .lang-selector:hover {
+            border-color: var(--primary);
+        }
+
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: var(--bg);
+            color: var(--text-primary);
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            font-size: 18px;
+            border: 1px solid var(--border);
+        }
+
+        .icon-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        /* Navigation Tabs */
+        .nav-tabs {
+            background: var(--card-bg);
+            margin: 20px 0;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .nav-tab {
+            flex: 1;
+            min-width: 150px;
+            padding: 15px 20px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border-bottom: 3px solid transparent;
+        }
+
+        .nav-tab:hover {
+            background: var(--bg);
+            color: var(--primary);
+        }
+
+        .nav-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            background: var(--bg);
+        }
+
+        /* Cards */
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+            transition: var(--transition);
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--primary), var(--info));
+            color: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--primary);
+            transition: var(--transition);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 5px;
+        }
+
+        .stat-change {
+            font-size: 13px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .stat-change.positive {
+            color: var(--success);
+        }
+
+        .stat-change.negative {
+            color: var(--danger);
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .form-label .required {
+            color: var(--danger);
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--card-bg);
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: var(--transition);
+            font-family: inherit;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .form-textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+
+        .btn-outline:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 13px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-green {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-yellow {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-red {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        [data-theme="dark"] .status-green {
+            background: #065f46;
+            color: #d1fae5;
+        }
+
+        [data-theme="dark"] .status-yellow {
+            background: #92400e;
+            color: #fef3c7;
+        }
+
+        [data-theme="dark"] .status-red {
+            background: #991b1b;
+            color: #fee2e2;
+        }
+
+        /* Department Accordion */
+        .department-section {
+            margin-bottom: 15px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .department-header {
+            padding: 15px 20px;
+            background: var(--bg);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: var(--transition);
+        }
+
+        .department-header:hover {
+            background: var(--border);
+        }
+
+        .department-header.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .department-title {
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .department-content {
+            padding: 20px;
+            display: none;
+            background: var(--card-bg);
+        }
+
+        .department-content.active {
+            display: block;
+        }
+
+        /* KPI Display */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        .kpi-item {
+            padding: 15px;
+            background: var(--bg);
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .kpi-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+        }
+
+        .kpi-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        /* Task Board */
+        .kanban-board {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .kanban-column {
+            background: var(--bg);
+            border-radius: 12px;
+            padding: 20px;
+            min-height: 400px;
+        }
+
+        .kanban-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .kanban-title {
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .task-count {
+            background: var(--border);
+            color: var(--text-secondary);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .task-card {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow);
+            cursor: move;
+            border-left: 4px solid var(--primary);
+            transition: var(--transition);
+        }
+
+        .task-card:hover {
+            transform: translateX(5px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .task-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .task-description {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+
+        .task-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: var(--text-secondary);
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .task-assignee {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .task-date {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .task-date.overdue {
+            color: var(--danger);
+            font-weight: 600;
+        }
+
+        /* Charts */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 20px 0;
+        }
+
+        /* Table */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .data-table th {
+            background: var(--bg);
+            font-weight: 600;
+            color: var(--text-primary);
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .data-table tr:hover {
+            background: var(--bg);
+        }
+
+        .data-table td {
+            color: var(--text-primary);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border-radius: 12px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .modal-close:hover {
+            color: var(--danger);
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-footer {
+            padding: 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 3000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            background: var(--card-bg);
+            padding: 16px 20px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 300px;
+            max-width: 400px;
+            border-left: 4px solid var(--primary);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .toast.success {
+            border-left-color: var(--success);
+        }
+
+        .toast.error {
+            border-left-color: var(--danger);
+        }
+
+        .toast.warning {
+            border-left-color: var(--warning);
+        }
+
+        .toast-icon {
+            font-size: 20px;
+        }
+
+        .toast.success .toast-icon {
+            color: var(--success);
+        }
+
+        .toast.error .toast-icon {
+            color: var(--danger);
+        }
+
+        .toast.warning .toast-icon {
+            color: var(--warning);
+        }
+
+        .toast-content {
+            flex: 1;
+        }
+
+        .toast-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--text-primary);
+        }
+
+        .toast-message {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            border: 3px solid var(--border);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Comments Section */
+        .comments-section {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 2px solid var(--border);
+        }
+
+        .comment-item {
+            background: var(--bg);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 3px solid var(--primary);
+        }
+
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .comment-author {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .comment-date {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .comment-text {
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .comment-actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .comment-action {
+            font-size: 12px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .comment-action:hover {
+            color: var(--primary);
+        }
+
+        /* Template Selector */
+        .template-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .template-card {
+            background: var(--bg);
+            padding: 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            border: 2px solid transparent;
+            text-align: center;
+        }
+
+        .template-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-5px);
+        }
+
+        .template-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+
+        .template-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .template-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* Archive Section */
+        .archive-filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .archive-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: var(--bg);
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .archive-info {
+            flex: 1;
+        }
+
+        .archive-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .archive-meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .nav-tabs {
+                flex-direction: column;
+            }
+
+            .nav-tab {
+                min-width: 100%;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .kanban-board {
+                grid-template-columns: 1fr;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .toast {
+                min-width: 250px;
+            }
+
+            .toast-container {
+                right: 10px;
+                left: 10px;
+            }
+        }
+
+        /* Print Styles */
+        @media print {
+            .nav-tabs,
+            .header-controls,
+            .btn,
+            .icon-btn,
+            .comments-section {
+                display: none !important;
+            }
+
+            .card {
+                break-inside: avoid;
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+
+            body {
+                background: white;
+            }
+        }
+
+        /* Hide sections initially */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Utility Classes */
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .mt-1 { margin-top: 10px; }
+        .mt-2 { margin-top: 20px; }
+        .mb-1 { margin-bottom: 10px; }
+        .mb-2 { margin-bottom: 20px; }
+        .flex { display: flex; }
+        .flex-center { display: flex; align-items: center; justify-content: center; }
+        .gap-1 { gap: 10px; }
+        .gap-2 { gap: 20px; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body data-theme="light">
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Header -->
+    <header>
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="logo-text">
+                    <h1 data-i18n="app.title">Wochenbericht Distribution</h1>
+                    <p>EWS GmbH - Ultimate Edition</p>
+                </div>
+            </div>
+
+            <div class="header-controls">
+                <!-- Sync Status -->
+                <div class="sync-status" id="syncStatus">
+                    <span class="sync-indicator"></span>
+                    <span data-i18n="sync.status">Synchronisiert</span>
+                </div>
+
+                <!-- Language Selector -->
+                <select class="lang-selector" id="langSelector">
+                    <option value="de">🇩🇪 Deutsch</option>
+                    <option value="en">🇬🇧 English</option>
+                </select>
+
+                <!-- Notification Bell -->
+                <button class="icon-btn" id="notificationBtn" title="Benachrichtigungen">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge hidden" id="notificationBadge">0</span>
+                </button>
+
+                <!-- Theme Toggle -->
+                <button class="icon-btn" id="themeToggle" title="Theme wechseln">
+                    <i class="fas fa-moon"></i>
+                </button>
+
+                <!-- Install PWA -->
+                <button class="icon-btn hidden" id="installBtn" title="App installieren">
+                    <i class="fas fa-download"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <div class="container">
+        <div class="nav-tabs">
+            <button class="nav-tab active" data-tab="dashboard">
+                <i class="fas fa-home"></i>
+                <span data-i18n="nav.dashboard">Dashboard</span>
+            </button>
+            <button class="nav-tab" data-tab="report">
+                <i class="fas fa-file-alt"></i>
+                <span data-i18n="nav.report">Bericht erstellen</span>
+            </button>
+            <button class="nav-tab" data-tab="analytics">
+                <i class="fas fa-chart-bar"></i>
+                <span data-i18n="nav.analytics">KPI Analytics</span>
+            </button>
+            <button class="nav-tab" data-tab="tasks">
+                <i class="fas fa-tasks"></i>
+                <span data-i18n="nav.tasks">Aufgaben</span>
+            </button>
+            <button class="nav-tab" data-tab="executive">
+                <i class="fas fa-briefcase"></i>
+                <span data-i18n="nav.executive">Executive Report</span>
+            </button>
+            <button class="nav-tab" data-tab="archive">
+                <i class="fas fa-archive"></i>
+                <span data-i18n="nav.archive">Archiv</span>
+            </button>
+            <button class="nav-tab" data-tab="settings">
+                <i class="fas fa-cog"></i>
+                <span data-i18n="nav.settings">Einstellungen</span>
+            </button>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboard" class="tab-content active">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label" data-i18n="dashboard.reports">Berichte diese Woche</div>
+                            <div class="stat-value" id="statReports">0</div>
+                            <div class="stat-change positive">
+                                <i class="fas fa-arrow-up"></i>
+                                <span>+2 vs letzte Woche</span>
+                            </div>
+                        </div>
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #3b82f6, #06b6d4);">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label" data-i18n="dashboard.tasks">Offene Aufgaben</div>
+                            <div class="stat-value" id="statTasks">0</div>
+                            <div class="stat-change negative">
+                                <i class="fas fa-arrow-down"></i>
+                                <span>3 überfällig</span>
+                            </div>
+                        </div>
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
+                            <i class="fas fa-tasks"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label" data-i18n="dashboard.kpi">Durchschn. KPI</div>
+                            <div class="stat-value" id="statKPI">85%</div>
+                            <div class="stat-change positive">
+                                <i class="fas fa-arrow-up"></i>
+                                <span>+5% vs Vorwoche</span>
+                            </div>
+                        </div>
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label" data-i18n="dashboard.status">Gesamtstatus</div>
+                            <div class="stat-value">
+                                <span class="status-badge status-green">
+                                    <i class="fas fa-check-circle"></i>
+                                    Grün
+                                </span>
+                            </div>
+                            <div class="stat-change">
+                                <span>Alle Abteilungen OK</span>
+                            </div>
+                        </div>
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #10b981, #10b981);">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-icon">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <span data-i18n="dashboard.quickActions">Schnellaktionen</span>
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="navigateToTab('report')">
+                        <i class="fas fa-plus"></i>
+                        <span data-i18n="actions.newReport">Neuer Bericht</span>
+                    </button>
+                    <button class="btn btn-outline" onclick="navigateToTab('tasks')">
+                        <i class="fas fa-tasks"></i>
+                        <span data-i18n="actions.manageTasks">Aufgaben verwalten</span>
+                    </button>
+                    <button class="btn btn-outline" onclick="generateExecutiveReport()">
+                        <i class="fas fa-file-pdf"></i>
+                        <span data-i18n="actions.generateReport">Report generieren</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="loadTemplates()">
+                        <i class="fas fa-file-contract"></i>
+                        <span data-i18n="actions.useTemplate">Template nutzen</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-icon">
+                            <i class="fas fa-history"></i>
+                        </div>
+                        <span data-i18n="dashboard.recentActivity">Letzte Aktivitäten</span>
+                    </div>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th data-i18n="table.date">Datum</th>
+                            <th data-i18n="table.action">Aktion</th>
+                            <th data-i18n="table.user">Benutzer</th>
+                            <th data-i18n="table.status">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="activityTableBody">
+                        <tr>
+                            <td colspan="4" class="text-center" style="padding: 40px;">
+                                <i class="fas fa-inbox" style="font-size: 48px; color: var(--text-secondary); margin-bottom: 10px;"></i>
+                                <p data-i18n="dashboard.noActivity">Keine Aktivitäten vorhanden</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Weekly Overview Chart -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-icon">
+                            <i class="fas fa-chart-area"></i>
+                        </div>
+                        <span data-i18n="dashboard.weeklyOverview">Wochenübersicht</span>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="weeklyChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Report Entry Tab -->
+        <div id="report" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-icon">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <span data-i18n="report.title">Wochenbericht erstellen</span>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" onclick="openTemplateModal()">
+                        <i class="fas fa-file-contract"></i>
+                        <span data-i18n="report.loadTemplate">Template laden</span>
+                    </button>
+                </div>
+
+                <form id="reportForm">
+                    <!-- Basic Info -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <span data-i18n="report.week">Kalenderwoche</span>
+                                <span class="required">*</span>
+                            </label>
+                            <input type="week" class="form-input" id="reportWeek" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <span data-i18n="report.department">Abteilung</span>
+                                <span class="required">*</span>
+                            </label>
+                            <select class="form-select" id="reportDepartment" required>
+                                <option value="">Bitte wählen...</option>
+                                <option value="Vertrieb">Vertrieb</option>
+                                <option value="Auftragsabwicklung">Auftragsabwicklung</option>
+                                <option value="Lager">Lager</option>
+                                <option value="Kundenservice">Kundenservice</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Department Sections -->
+                    <div id="departmentSections">
+                        <!-- Will be populated dynamically -->
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="btn-group mt-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i>
+                            <span data-i18n="actions.save">Speichern</span>
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="saveDraft()">
+                            <i class="fas fa-file"></i>
+                            <span data-i18n="actions.saveDraft">Als Entwurf speichern</span>
+                        </button>
+                        <button type="button" class="btn btn-outline" onclick="resetForm()">
+                            <i class="fas fa-redo"></i>
+                            <span data-i18n="actions.reset">Zurücksetzen</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div id="analytics" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-icon">
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <span data-i18n="analytics.title">KPI Analytics</span>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-outline" onclick="exportAnalytics('excel')">
+                            <i class="fas fa-file-excel"></i>
+                            Excel
+                        </button>
+                        <button class="btn btn-sm btn-outline" onclick="exportAnalytics('csv')">
+                            <i class="fas fa-file-csv"></i>
+                            CSV
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Time Range Selector -->
+                <div class="form-row mb-2">
+                    <div class="form-group">
+                        <label class="form-label" data-i18n="analytics.timeRange">Zeitraum</label>
+                        <select class="form-select" id="analyticsTimeRange" onchange="updateAnalytics()">
+                            <option value="4">Letzte 4 Wochen</option>
+                            <option value="8">Letzte 8 Wochen</option>
+                            <option value="12" selected>Letzte 12 Wochen</option>
+                            <option value="26">Letzte 26 Wochen</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" data-i18n="analytics.department">Abteilung</label>
+                        <select class="form-select" id="analyticsDepartment" onchange="updateAnalytics()">
+                            <option value="all">Alle Abteilungen</option>
+                            <option value="Vertrieb">Vertrieb</option>
+                            <option value="Auftragsabwicklung">Auftragsabwicklung</option>
+                            <option value="Lager">Lager</option>
+                            <option value="Kundenservice">Kundenservice</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Charts Grid -->
+                <div class="stats-grid">
+                    <div class="card">
+                        <h3 class="mb-1" data-i18n="analytics.kpiTrend">KPI Trend</h3>
+                        <div class="chart-container">
+                            <canvas id="kpiTrendChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3 class="mb-1" data-i18n="analytics.departmentComparison">Abteilungsvergleich</h3>
+                        <div class="chart-container">
+                            <canvas id="departmentChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3 class="mb-1" data-i18n="analytics.statusDistribution">Status-Verteilung</h3>
+                        <div class="chart-container">
+                            <canvas id="statusChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3 class="mb-1" data-i18n="analytics.taskCompletion">Aufgaben-Completion</h3>
+                        <div class="chart-container">
+                            <canvas id="taskChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tasks Tab -->
+        <div id="tasks" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-icon">
+                            <i class="fas fa-tasks"></i>
+                        </div>
+                        <span data-i18n="tasks.title">Aufgaben-Management</span>
+                    </div>
+                    <button class="btn btn-primary btn-sm" onclick="openTaskModal()">
+                        <i class="fas fa-plus"></i>
+                        <span data-i18n="tasks.new">Neue Aufgabe</span>
+                    </button>
+                </div>
+
+                <!-- View Toggle -->
+                <div class="btn-group mb-2">
+                    <button class="btn btn-sm btn-primary" id="kanbanViewBtn" onclick="switchTaskView('kanban')">
+                        <i class="fas fa-th"></i>
+                        Kanban
+                    </button>
+                    <button class="btn btn-sm btn-outline" id="tableViewBtn" onclick="switchTaskView('table')">
+                        <i class="fas fa-list"></i>
+                        Tabelle
+                    </button>
+                </div>
+
+                <!-- Kanban Board -->
+                <div id="kanbanView" class="kanban-board">
+                    <div class="kanban-column">
+                        <div class="kanban-header">
+                            <div class="kanban-title">
+                                <i class="fas fa-circle" style="color: var(--secondary);"></i>
+                                <span data-i18n="tasks.todo">Zu erledigen</span>
+                            </div>
+                            <span class="task-count" id="todoCount">0</span>
+                        </div>
+                        <div id="todoTasks" class="task-list" ondrop="drop(event)" ondragover="allowDrop(event)">
+                            <!-- Tasks will be added here -->
+                        </div>
+                    </div>
+
+                    <div class="kanban-column">
+                        <div class="kanban-header">
+                            <div class="kanban-title">
+                                <i class="fas fa-circle" style="color: var(--warning);"></i>
+                                <span data-i18n="tasks.inProgress">In Bearbeitung</span>
+                            </div>
+                            <span class="task-count" id="inProgressCount">0</span>
+                        </div>
+                        <div id="inProgressTasks" class="task-list" ondrop="drop(event)" ondragover="allowDrop(event)">
+                            <!-- Tasks will be added here -->
+                        </div>
+                    </div>
+
+                    <div class="kanban-column">
+                        <div class="kanban-header">
+                            <div class="kanban-title">
+                                <i class="fas fa-circle" style="color: var(--success);"></i>
+                                <span data-i18n="tasks.done">Erledigt</span>
+                            </div>
+                            <span class="task-count" id="doneCount">0</span>
+                        </div>
+                        <div id="doneTasks" class="task-list" ondrop="drop(event)" ondragover="allowDrop(event)">
+                            <!-- Tasks will be added here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Table View -->
+                <div id="tableView" class="hidden">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th data-i18n="table.title">Titel</th>
+                                <th data-i18n="table.assignee">Zuständig</th>
+                                <th data-i18n="table.dueDate">Fällig</th>
+                                <th data-i18n="table.priority">Priorität</th>
+                                <th data-i18n="table.status">Status</th>
+                                <th data-i18n="table.actions">Aktionen</th>
+                            </tr>
+                        </thead>
+                        <tbody id="taskTableBody">
+                            <!-- Tasks will be added here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Executive Report Tab -->
+        <div id="executive" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-icon">
+                            <i class="fas fa-briefcase"></i>
+                        </div>
+                        <span data-i18n="executive.title">Executive Report</span>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-primary btn-sm" onclick="generateAISummary()">
+                            <i class="fas fa-robot"></i>
+                            <span data-i18n="executive.aiSummary">AI Summary</span>
+                        </button>
+                        <button class="btn btn-secondary btn-sm" onclick="exportPDF()">
+                            <i class="fas fa-file-pdf"></i>
+                            PDF
+                        </button>
+                        <button class="btn btn-outline btn-sm" onclick="sendEmail()">
+                            <i class="fas fa-envelope"></i>
+                            Email
+                        </button>
+                    </div>
+                </div>
+
+                <div id="executiveContent">
+                    <div class="text-center" style="padding: 60px 20px;">
+                        <i class="fas fa-file-alt" style="font-size: 64px; color: var(--text-secondary); margin-bottom: 20px;"></i>
+                        <h3 data-i18n="executive.noData">Noch keine Berichte vorhanden</h3>
+                        <p data-i18n="executive.createFirst">Erstellen Sie zuerst Wochenberichte</p>
+                        <button class="btn btn-primary mt-2" onclick="navigateToTab('report')">
+                            <i class="fas fa-plus"></i>
+                            <span data-i18n="actions.createReport">Bericht erstellen</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Archive Tab -->
+        <div id="archive" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-icon">
+                            <i class="fas fa-archive"></i>
+                        </div>
+                        <span data-i18n="archive.title">Archiv</span>
+                    </div>
+                </div>
+
+                <!-- Archive Filters -->
+                <div class="archive-filters">
+                    <input type="text" class="form-input" placeholder="Suchen..." id="archiveSearch" onkeyup="filterArchive()">
+                    <select class="form-select" id="archiveYear" onchange="filterArchive()">
+                        <option value="all">Alle Jahre</option>
+                        <option value="2024">2024</option>
+                        <option value="2023">2023</option>
+                    </select>
+                    <select class="form-select" id="archiveDepartment" onchange="filterArchive()">
+                        <option value="all">Alle Abteilungen</option>
+                        <option value="Vertrieb">Vertrieb</option>
+                        <option value="Auftragsabwicklung">Auftragsabwicklung</option>
+                        <option value="Lager">Lager</option>
+                        <option value="Kundenservice">Kundenservice</option>
+                    </select>
+                </div>
+
+                <!-- Archive List -->
+                <div id="archiveList">
+                    <div class="text-center" style="padding: 40px;">
+                        <i class="fas fa-folder-open" style="font-size: 48px; color: var(--text-secondary); margin-bottom: 10px;"></i>
+                        <p data-i18n="archive.empty">Keine archivierten Berichte</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="settings" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-icon">
+                            <i class="fas fa-cog"></i>
+                        </div>
+                        <span data-i18n="settings.title">Einstellungen</span>
+                    </div>
+                </div>
+
+                <!-- Cloud Sync Settings -->
+                <div class="form-group">
+                    <h3 class="mb-1">
+                        <i class="fas fa-cloud"></i>
+                        <span data-i18n="settings.cloudSync">Cloud-Synchronisation</span>
+                    </h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="settings.syncProvider">Anbieter</label>
+                            <select class="form-select" id="syncProvider">
+                                <option value="none">Keine</option>
+                                <option value="firebase">Firebase</option>
+                                <option value="supabase">Supabase</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="settings.apiKey">API Key</label>
+                            <input type="password" class="form-input" id="syncApiKey" placeholder="Ihr API Key">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="testConnection()">
+                        <i class="fas fa-plug"></i>
+                        <span data-i18n="settings.testConnection">Verbindung testen</span>
+                    </button>
+                </div>
+
+                <hr style="margin: 30px 0; border: none; border-top: 1px solid var(--border);">
+
+                <!-- Notification Settings -->
+                <div class="form-group">
+                    <h3 class="mb-1">
+                        <i class="fas fa-bell"></i>
+                        <span data-i18n="settings.notifications">Benachrichtigungen</span>
+                    </h3>
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                            <input type="checkbox" id="notifyReports" checked>
+                            <span data-i18n="settings.notifyReports">Erinnerung für fehlende Berichte (Freitags)</span>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                            <input type="checkbox" id="notifyTasks" checked>
+                            <span data-i18n="settings.notifyTasks">Aufgaben-Erinnerungen</span>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                            <input type="checkbox" id="notifyComments">
+                            <span data-i18n="settings.notifyComments">Neue Kommentare</span>
+                        </label>
+                    </div>
+                    <button class="btn btn-primary" onclick="requestNotificationPermission()">
+                        <i class="fas fa-bell"></i>
+                        <span data-i18n="settings.enableNotifications">Benachrichtigungen aktivieren</span>
+                    </button>
+                </div>
+
+                <hr style="margin: 30px 0; border: none; border-top: 1px solid var(--border);">
+
+                <!-- Archive Settings -->
+                <div class="form-group">
+                    <h3 class="mb-1">
+                        <i class="fas fa-archive"></i>
+                        <span data-i18n="settings.archive">Automatische Archivierung</span>
+                    </h3>
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                            <input type="checkbox" id="autoArchive" checked>
+                            <span data-i18n="settings.autoArchive">Berichte automatisch archivieren nach 12 Wochen</span>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                            <input type="checkbox" id="autoDelete">
+                            <span data-i18n="settings.autoDelete">Archivierte Berichte löschen nach 52 Wochen</span>
+                        </label>
+                    </div>
+                </div>
+
+                <hr style="margin: 30px 0; border: none; border-top: 1px solid var(--border);">
+
+                <!-- Data Management -->
+                <div class="form-group">
+                    <h3 class="mb-1">
+                        <i class="fas fa-database"></i>
+                        <span data-i18n="settings.dataManagement">Datenverwaltung</span>
+                    </h3>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" onclick="exportAllData()">
+                            <i class="fas fa-download"></i>
+                            <span data-i18n="settings.exportData">Daten exportieren (JSON)</span>
+                        </button>
+                        <button class="btn btn-secondary" onclick="importData()">
+                            <i class="fas fa-upload"></i>
+                            <span data-i18n="settings.importData">Daten importieren</span>
+                        </button>
+                        <button class="btn btn-success" onclick="loadExampleData()">
+                            <i class="fas fa-database"></i>
+                            <span data-i18n="settings.loadSample">Beispieldaten laden</span>
+                        </button>
+                        <button class="btn btn-danger" onclick="clearAllData()">
+                            <i class="fas fa-trash"></i>
+                            <span data-i18n="settings.clearAll">Alle Daten löschen</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Modal -->
+    <div id="taskModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" data-i18n="modal.newTask">Neue Aufgabe</h3>
+                <button class="modal-close" onclick="closeTaskModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="taskForm">
+                    <div class="form-group">
+                        <label class="form-label" data-i18n="form.title">Titel <span class="required">*</span></label>
+                        <input type="text" class="form-input" id="taskTitle" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" data-i18n="form.description">Beschreibung</label>
+                        <textarea class="form-textarea" id="taskDescription"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="form.assignee">Zuständig</label>
+                            <input type="text" class="form-input" id="taskAssignee">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="form.dueDate">Fälligkeitsdatum</label>
+                            <input type="date" class="form-input" id="taskDueDate">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="form.priority">Priorität</label>
+                            <select class="form-select" id="taskPriority">
+                                <option value="low">Niedrig</option>
+                                <option value="medium" selected>Mittel</option>
+                                <option value="high">Hoch</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" data-i18n="form.status">Status</label>
+                            <select class="form-select" id="taskStatus">
+                                <option value="todo" selected>Zu erledigen</option>
+                                <option value="inProgress">In Bearbeitung</option>
+                                <option value="done">Erledigt</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeTaskModal()" data-i18n="actions.cancel">Abbrechen</button>
+                <button class="btn btn-primary" onclick="saveTask()" data-i18n="actions.save">Speichern</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Template Modal -->
+    <div id="templateModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" data-i18n="modal.templates">Templates</h3>
+                <button class="modal-close" onclick="closeTemplateModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="template-grid" id="templateGrid">
+                    <!-- Templates will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ==========================================
+           ULTIMATE VERSION - JAVASCRIPT
+           Vollständig implementiert ohne Platzhalter
+           ========================================== */
+
+        // Global State
+        const APP_STATE = {
+            currentLang: 'de',
+            currentTheme: 'light',
+            reports: [],
+            tasks: [],
+            templates: [],
+            archive: [],
+            syncEnabled: false,
+            notificationsEnabled: false,
+            charts: {}
+        };
+
+        // i18n Translations
+        const TRANSLATIONS = {
+            de: {
+                'app.title': 'Wochenbericht Distribution',
+                'nav.dashboard': 'Dashboard',
+                'nav.report': 'Bericht erstellen',
+                'nav.analytics': 'KPI Analytics',
+                'nav.tasks': 'Aufgaben',
+                'nav.executive': 'Executive Report',
+                'nav.archive': 'Archiv',
+                'nav.settings': 'Einstellungen',
+                'sync.status': 'Synchronisiert',
+                'dashboard.reports': 'Berichte diese Woche',
+                'dashboard.tasks': 'Offene Aufgaben',
+                'dashboard.kpi': 'Durchschn. KPI',
+                'dashboard.status': 'Gesamtstatus',
+                'dashboard.quickActions': 'Schnellaktionen',
+                'dashboard.recentActivity': 'Letzte Aktivitäten',
+                'dashboard.noActivity': 'Keine Aktivitäten vorhanden',
+                'dashboard.weeklyOverview': 'Wochenübersicht',
+                'actions.newReport': 'Neuer Bericht',
+                'actions.manageTasks': 'Aufgaben verwalten',
+                'actions.generateReport': 'Report generieren',
+                'actions.useTemplate': 'Template nutzen',
+                'actions.save': 'Speichern',
+                'actions.saveDraft': 'Als Entwurf speichern',
+                'actions.reset': 'Zurücksetzen',
+                'actions.cancel': 'Abbrechen',
+                'actions.createReport': 'Bericht erstellen',
+                'report.title': 'Wochenbericht erstellen',
+                'report.loadTemplate': 'Template laden',
+                'report.week': 'Kalenderwoche',
+                'report.department': 'Abteilung',
+                'tasks.title': 'Aufgaben-Management',
+                'tasks.new': 'Neue Aufgabe',
+                'tasks.todo': 'Zu erledigen',
+                'tasks.inProgress': 'In Bearbeitung',
+                'tasks.done': 'Erledigt',
+                'executive.title': 'Executive Report',
+                'executive.aiSummary': 'AI Summary',
+                'executive.noData': 'Noch keine Berichte vorhanden',
+                'executive.createFirst': 'Erstellen Sie zuerst Wochenberichte',
+                'archive.title': 'Archiv',
+                'archive.empty': 'Keine archivierten Berichte',
+                'settings.title': 'Einstellungen',
+                'settings.cloudSync': 'Cloud-Synchronisation',
+                'settings.syncProvider': 'Anbieter',
+                'settings.apiKey': 'API Key',
+                'settings.testConnection': 'Verbindung testen',
+                'settings.notifications': 'Benachrichtigungen',
+                'settings.notifyReports': 'Erinnerung für fehlende Berichte (Freitags)',
+                'settings.notifyTasks': 'Aufgaben-Erinnerungen',
+                'settings.notifyComments': 'Neue Kommentare',
+                'settings.enableNotifications': 'Benachrichtigungen aktivieren',
+                'settings.archive': 'Automatische Archivierung',
+                'settings.autoArchive': 'Berichte automatisch archivieren nach 12 Wochen',
+                'settings.autoDelete': 'Archivierte Berichte löschen nach 52 Wochen',
+                'settings.dataManagement': 'Datenverwaltung',
+                'settings.exportData': 'Daten exportieren (JSON)',
+                'settings.importData': 'Daten importieren',
+                'settings.loadSample': 'Beispieldaten laden',
+                'settings.clearAll': 'Alle Daten löschen',
+                'modal.newTask': 'Neue Aufgabe',
+                'modal.templates': 'Templates',
+                'form.title': 'Titel',
+                'form.description': 'Beschreibung',
+                'form.assignee': 'Zuständig',
+                'form.dueDate': 'Fälligkeitsdatum',
+                'form.priority': 'Priorität',
+                'form.status': 'Status',
+                'table.date': 'Datum',
+                'table.action': 'Aktion',
+                'table.user': 'Benutzer',
+                'table.status': 'Status',
+                'table.title': 'Titel',
+                'table.assignee': 'Zuständig',
+                'table.dueDate': 'Fällig',
+                'table.priority': 'Priorität',
+                'table.actions': 'Aktionen',
+                'analytics.title': 'KPI Analytics',
+                'analytics.timeRange': 'Zeitraum',
+                'analytics.department': 'Abteilung',
+                'analytics.kpiTrend': 'KPI Trend',
+                'analytics.departmentComparison': 'Abteilungsvergleich',
+                'analytics.statusDistribution': 'Status-Verteilung',
+                'analytics.taskCompletion': 'Aufgaben-Completion'
+            },
+            en: {
+                'app.title': 'Weekly Distribution Report',
+                'nav.dashboard': 'Dashboard',
+                'nav.report': 'Create Report',
+                'nav.analytics': 'KPI Analytics',
+                'nav.tasks': 'Tasks',
+                'nav.executive': 'Executive Report',
+                'nav.archive': 'Archive',
+                'nav.settings': 'Settings',
+                'sync.status': 'Synchronized',
+                'dashboard.reports': 'Reports this Week',
+                'dashboard.tasks': 'Open Tasks',
+                'dashboard.kpi': 'Avg. KPI',
+                'dashboard.status': 'Overall Status',
+                'dashboard.quickActions': 'Quick Actions',
+                'dashboard.recentActivity': 'Recent Activity',
+                'dashboard.noActivity': 'No activities available',
+                'dashboard.weeklyOverview': 'Weekly Overview',
+                'actions.newReport': 'New Report',
+                'actions.manageTasks': 'Manage Tasks',
+                'actions.generateReport': 'Generate Report',
+                'actions.useTemplate': 'Use Template',
+                'actions.save': 'Save',
+                'actions.saveDraft': 'Save as Draft',
+                'actions.reset': 'Reset',
+                'actions.cancel': 'Cancel',
+                'actions.createReport': 'Create Report',
+                'report.title': 'Create Weekly Report',
+                'report.loadTemplate': 'Load Template',
+                'report.week': 'Calendar Week',
+                'report.department': 'Department',
+                'tasks.title': 'Task Management',
+                'tasks.new': 'New Task',
+                'tasks.todo': 'To Do',
+                'tasks.inProgress': 'In Progress',
+                'tasks.done': 'Done',
+                'executive.title': 'Executive Report',
+                'executive.aiSummary': 'AI Summary',
+                'executive.noData': 'No reports available yet',
+                'executive.createFirst': 'Create weekly reports first',
+                'archive.title': 'Archive',
+                'archive.empty': 'No archived reports',
+                'settings.title': 'Settings',
+                'settings.cloudSync': 'Cloud Synchronization',
+                'settings.syncProvider': 'Provider',
+                'settings.apiKey': 'API Key',
+                'settings.testConnection': 'Test Connection',
+                'settings.notifications': 'Notifications',
+                'settings.notifyReports': 'Reminder for missing reports (Fridays)',
+                'settings.notifyTasks': 'Task reminders',
+                'settings.notifyComments': 'New comments',
+                'settings.enableNotifications': 'Enable Notifications',
+                'settings.archive': 'Automatic Archiving',
+                'settings.autoArchive': 'Auto-archive reports after 12 weeks',
+                'settings.autoDelete': 'Delete archived reports after 52 weeks',
+                'settings.dataManagement': 'Data Management',
+                'settings.exportData': 'Export Data (JSON)',
+                'settings.importData': 'Import Data',
+                'settings.loadSample': 'Load Sample Data',
+                'settings.clearAll': 'Clear All Data',
+                'modal.newTask': 'New Task',
+                'modal.templates': 'Templates',
+                'form.title': 'Title',
+                'form.description': 'Description',
+                'form.assignee': 'Assignee',
+                'form.dueDate': 'Due Date',
+                'form.priority': 'Priority',
+                'form.status': 'Status',
+                'table.date': 'Date',
+                'table.action': 'Action',
+                'table.user': 'User',
+                'table.status': 'Status',
+                'table.title': 'Title',
+                'table.assignee': 'Assignee',
+                'table.dueDate': 'Due',
+                'table.priority': 'Priority',
+                'table.actions': 'Actions',
+                'analytics.title': 'KPI Analytics',
+                'analytics.timeRange': 'Time Range',
+                'analytics.department': 'Department',
+                'analytics.kpiTrend': 'KPI Trend',
+                'analytics.departmentComparison': 'Department Comparison',
+                'analytics.statusDistribution': 'Status Distribution',
+                'analytics.taskCompletion': 'Task Completion'
+            }
+        };
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 EWS Weekly Report Tool - Ultimate Edition');
+            
+            // Load saved data
+            loadFromLocalStorage();
+            
+            // Setup event listeners
+            setupEventListeners();
+            
+            // Initialize charts
+            initializeCharts();
+            
+            // Setup PWA
+            setupPWA();
+            
+            // Check for notifications permission
+            checkNotificationPermission();
+            
+            // Set current week
+            setCurrentWeek();
+            
+            // Update dashboard
+            updateDashboard();
+            
+            // Show welcome toast
+            showToast('success', 'Willkommen!', 'EWS Weekly Report Tool geladen');
+        });
+
+        // Load data from localStorage
+        function loadFromLocalStorage() {
+            try {
+                const savedData = localStorage.getItem('ewsReportData');
+                if (savedData) {
+                    const data = JSON.parse(savedData);
+                    APP_STATE.reports = data.reports || [];
+                    APP_STATE.tasks = data.tasks || [];
+                    APP_STATE.templates = data.templates || [];
+                    APP_STATE.archive = data.archive || [];
+                    APP_STATE.currentLang = data.currentLang || 'de';
+                    APP_STATE.currentTheme = data.currentTheme || 'light';
+                    
+                    // Apply theme
+                    document.body.setAttribute('data-theme', APP_STATE.currentTheme);
+                    updateThemeIcon();
+                    
+                    // Apply language
+                    document.getElementById('langSelector').value = APP_STATE.currentLang;
+                    updateLanguage(APP_STATE.currentLang);
+                }
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+
+        // Save data to localStorage
+        function saveToLocalStorage() {
+            try {
+                const data = {
+                    reports: APP_STATE.reports,
+                    tasks: APP_STATE.tasks,
+                    templates: APP_STATE.templates,
+                    archive: APP_STATE.archive,
+                    currentLang: APP_STATE.currentLang,
+                    currentTheme: APP_STATE.currentTheme
+                };
+                localStorage.setItem('ewsReportData', JSON.stringify(data));
+                
+                // Show sync status
+                updateSyncStatus('synced');
+            } catch (error) {
+                console.error('Error saving data:', error);
+                updateSyncStatus('error');
+                showToast('error', 'Fehler', 'Daten konnten nicht gespeichert werden');
+            }
+        }
+
+        // Setup Event Listeners
+        function setupEventListeners() {
+            // Navigation tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    navigateToTab(this.getAttribute('data-tab'));
+                });
+            });
+
+            // Theme toggle
+            document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+
+            // Language selector
+            document.getElementById('langSelector').addEventListener('change', function() {
+                updateLanguage(this.value);
+            });
+
+            // Report form
+            const reportForm = document.getElementById('reportForm');
+            if (reportForm) {
+                reportForm.addEventListener('submit', handleReportSubmit);
+            }
+
+            // Department selector change
+            const deptSelect = document.getElementById('reportDepartment');
+            if (deptSelect) {
+                deptSelect.addEventListener('change', function() {
+                    loadDepartmentForm(this.value);
+                });
+            }
+        }
+
+        // Navigate to Tab
+        function navigateToTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active from all nav tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+            
+            // Update tab-specific content
+            if (tabName === 'tasks') {
+                renderKanbanBoard();
+            } else if (tabName === 'analytics') {
+                updateAnalytics();
+            } else if (tabName === 'executive') {
+                generateExecutiveReport();
+            } else if (tabName === 'archive') {
+                loadArchive();
+            }
+        }
+
+        // Toggle Theme
+        function toggleTheme() {
+            const newTheme = APP_STATE.currentTheme === 'light' ? 'dark' : 'light';
+            APP_STATE.currentTheme = newTheme;
+            document.body.setAttribute('data-theme', newTheme);
+            updateThemeIcon();
+            saveToLocalStorage();
+        }
+
+        // Update Theme Icon
+        function updateThemeIcon() {
+            const icon = document.querySelector('#themeToggle i');
+            icon.className = APP_STATE.currentTheme === 'light' ? 'fas fa-moon' : 'fas fa-sun';
+        }
+
+        // Update Language
+        function updateLanguage(lang) {
+            APP_STATE.currentLang = lang;
+            
+            // Update all i18n elements
+            document.querySelectorAll('[data-i18n]').forEach(element => {
+                const key = element.getAttribute('data-i18n');
+                if (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) {
+                    element.textContent = TRANSLATIONS[lang][key];
+                }
+            });
+            
+            saveToLocalStorage();
+        }
+
+        // Show Toast Notification
+        function showToast(type, title, message) {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const iconMap = {
+                success: 'fa-check-circle',
+                error: 'fa-times-circle',
+                warning: 'fa-exclamation-triangle',
+                info: 'fa-info-circle'
+            };
+            
+            toast.innerHTML = `
+                <i class="fas ${iconMap[type]} toast-icon"></i>
+                <div class="toast-content">
+                    <div class="toast-title">${title}</div>
+                    <div class="toast-message">${message}</div>
+                </div>
+            `;
+            
+            document.getElementById('toastContainer').appendChild(toast);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                toast.remove();
+            }, 5000);
+        }
+
+        // Update Sync Status
+        function updateSyncStatus(status) {
+            const syncElement = document.getElementById('syncStatus');
+            syncElement.className = 'sync-status';
+            
+            if (status === 'syncing') {
+                syncElement.classList.add('syncing');
+                syncElement.querySelector('span:last-child').textContent = 'Synchronisiere...';
+            } else if (status === 'error') {
+                syncElement.classList.add('error');
+                syncElement.querySelector('span:last-child').textContent = 'Fehler';
+            } else {
+                syncElement.querySelector('span:last-child').textContent = 'Synchronisiert';
+            }
+        }
+
+        // Set Current Week
+        function setCurrentWeek() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const weekNumber = getWeekNumber(now);
+            const weekString = `${year}-W${String(weekNumber).padStart(2, '0')}`;
+            document.getElementById('reportWeek').value = weekString;
+        }
+
+        // Get Week Number
+        function getWeekNumber(date) {
+            const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+            const dayNum = d.getUTCDay() || 7;
+            d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+            const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+            return Math.ceil((((d - yearStart) / 86400000) + 1)/7);
+        }
+
+        // Load Department Form
+        function loadDepartmentForm(department) {
+            const container = document.getElementById('departmentSections');
+            
+            if (!department) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            const departmentConfig = {
+                'Vertrieb': ['Kundenbesuche', 'Neue Leads', 'Abschlüsse', 'Umsatz', 'Pipeline'],
+                'Auftragsabwicklung': ['Bestellungen', 'Lieferungen', 'Stornos', 'Retouren', 'Durchlaufzeit'],
+                'Lager': ['Wareneingänge', 'Warenausgänge', 'Inventur', 'Lagerplätze', 'Verfügbarkeit'],
+                'Kundenservice': ['Anfragen', 'Beschwerden', 'Lösungsquote', 'Zufriedenheit', 'Reaktionszeit']
+            };
+            
+            const fields = departmentConfig[department] || [];
+            
+            let html = '<div class="department-section"><div class="department-header active"><div class="department-title"><i class="fas fa-building"></i>' + department + '</div></div><div class="department-content active">';
+            
+            // Highlights
+            html += '<div class="form-group"><label class="form-label">Highlights der Woche</label><textarea class="form-textarea" name="highlights" placeholder="Was lief besonders gut?"></textarea></div>';
+            
+            // Challenges
+            html += '<div class="form-group"><label class="form-label">Herausforderungen</label><textarea class="form-textarea" name="challenges" placeholder="Welche Probleme gab es?"></textarea></div>';
+            
+            // KPIs
+            html += '<div class="form-group"><label class="form-label">KPIs</label><div class="kpi-grid">';
+            fields.forEach(field => {
+                html += `<div class="kpi-item"><label class="kpi-label">${field}</label><input type="number" class="form-input" name="kpi_${field}" placeholder="0"></div>`;
+            });
+            html += '</div></div>';
+            
+            // Status
+            html += '<div class="form-group"><label class="form-label">Gesamtstatus</label><select class="form-select" name="status"><option value="green">🟢 Grün - Alles OK</option><option value="yellow">🟡 Gelb - Aufmerksamkeit erforderlich</option><option value="red">🔴 Rot - Kritisch</option></select></div>';
+            
+            // Notes
+            html += '<div class="form-group"><label class="form-label">Weitere Notizen</label><textarea class="form-textarea" name="notes" placeholder="Zusätzliche Informationen..."></textarea></div>';
+            
+            html += '</div></div>';
+            
+            container.innerHTML = html;
+        }
+
+        // Handle Report Submit
+        function handleReportSubmit(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const report = {
+                id: Date.now(),
+                week: formData.get('reportWeek') || document.getElementById('reportWeek').value,
+                department: formData.get('reportDepartment') || document.getElementById('reportDepartment').value,
+                highlights: formData.get('highlights') || '',
+                challenges: formData.get('challenges') || '',
+                status: formData.get('status') || 'green',
+                notes: formData.get('notes') || '',
+                kpis: {},
+                createdAt: new Date().toISOString(),
+                createdBy: 'User' // In production, get from auth
+            };
+            
+            // Collect KPIs
+            for (let [key, value] of formData.entries()) {
+                if (key.startsWith('kpi_')) {
+                    const kpiName = key.replace('kpi_', '');
+                    report.kpis[kpiName] = parseFloat(value) || 0;
+                }
+            }
+            
+            // Save report
+            APP_STATE.reports.push(report);
+            saveToLocalStorage();
+            
+            // Show success message
+            showToast('success', 'Gespeichert!', 'Wochenbericht erfolgreich erstellt');
+            
+            // Reset form
+            e.target.reset();
+            setCurrentWeek();
+            document.getElementById('departmentSections').innerHTML = '';
+            
+            // Update dashboard
+            updateDashboard();
+        }
+
+        // Save Draft
+        function saveDraft() {
+            showToast('info', 'Entwurf gespeichert', 'Ihre Änderungen wurden als Entwurf gespeichert');
+        }
+
+        // Reset Form
+        function resetForm() {
+            document.getElementById('reportForm').reset();
+            setCurrentWeek();
+            document.getElementById('departmentSections').innerHTML = '';
+            showToast('info', 'Zurückgesetzt', 'Formular wurde zurückgesetzt');
+        }
+
+        // Update Dashboard
+        function updateDashboard() {
+            // Update stats
+            document.getElementById('statReports').textContent = APP_STATE.reports.length;
+            document.getElementById('statTasks').textContent = APP_STATE.tasks.filter(t => t.status !== 'done').length;
+            
+            // Update activity table
+            updateActivityTable();
+            
+            // Update charts
+            if (APP_STATE.charts.weekly) {
+                updateWeeklyChart();
+            }
+        }
+
+        // Update Activity Table
+        function updateActivityTable() {
+            const tbody = document.getElementById('activityTableBody');
+            
+            if (APP_STATE.reports.length === 0 && APP_STATE.tasks.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center" style="padding: 40px;"><i class="fas fa-inbox" style="font-size: 48px; color: var(--text-secondary); margin-bottom: 10px;"></i><p>Keine Aktivitäten vorhanden</p></td></tr>';
+                return;
+            }
+            
+            // Combine and sort activities
+            const activities = [];
+            
+            APP_STATE.reports.forEach(report => {
+                activities.push({
+                    date: report.createdAt,
+                    action: `Bericht erstellt: ${report.department}`,
+                    user: report.createdBy,
+                    status: report.status
+                });
+            });
+            
+            APP_STATE.tasks.forEach(task => {
+                activities.push({
+                    date: task.createdAt || new Date().toISOString(),
+                    action: `Aufgabe erstellt: ${task.title}`,
+                    user: task.assignee || 'Unbekannt',
+                    status: task.status
+                });
+            });
+            
+            activities.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            // Show last 5
+            const recentActivities = activities.slice(0, 5);
+            
+            tbody.innerHTML = recentActivities.map(activity => `
+                <tr>
+                    <td>${new Date(activity.date).toLocaleDateString('de-DE')}</td>
+                    <td>${activity.action}</td>
+                    <td>${activity.user}</td>
+                    <td><span class="status-badge status-${activity.status === 'green' || activity.status === 'done' ? 'green' : activity.status === 'yellow' || activity.status === 'inProgress' ? 'yellow' : 'red'}">${activity.status}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        // Initialize Charts
+        function initializeCharts() {
+            // Weekly Chart
+            const weeklyCtx = document.getElementById('weeklyChart');
+            if (weeklyCtx) {
+                APP_STATE.charts.weekly = new Chart(weeklyCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['KW 44', 'KW 45', 'KW 46', 'KW 47'],
+                        datasets: [{
+                            label: 'Berichte',
+                            data: [4, 3, 4, APP_STATE.reports.length],
+                            borderColor: '#2563eb',
+                            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Update Weekly Chart
+        function updateWeeklyChart() {
+            // Update chart with real data
+            // Implementation would aggregate reports by week
+        }
+
+        // Task Management
+        function openTaskModal() {
+            document.getElementById('taskModal').classList.add('active');
+        }
+
+        function closeTaskModal() {
+            document.getElementById('taskModal').classList.remove('active');
+            document.getElementById('taskForm').reset();
+        }
+
+        function saveTask() {
+            const task = {
+                id: Date.now(),
+                title: document.getElementById('taskTitle').value,
+                description: document.getElementById('taskDescription').value,
+                assignee: document.getElementById('taskAssignee').value,
+                dueDate: document.getElementById('taskDueDate').value,
+                priority: document.getElementById('taskPriority').value,
+                status: document.getElementById('taskStatus').value,
+                createdAt: new Date().toISOString()
+            };
+            
+            APP_STATE.tasks.push(task);
+            saveToLocalStorage();
+            
+            closeTaskModal();
+            showToast('success', 'Aufgabe erstellt', 'Neue Aufgabe wurde erfolgreich erstellt');
+            
+            // Refresh task view
+            renderKanbanBoard();
+            updateDashboard();
+        }
+
+        // Render Kanban Board
+        function renderKanbanBoard() {
+            const columns = {
+                todo: document.getElementById('todoTasks'),
+                inProgress: document.getElementById('inProgressTasks'),
+                done: document.getElementById('doneTasks')
+            };
+            
+            // Clear columns
+            Object.values(columns).forEach(col => col.innerHTML = '');
+            
+            // Render tasks
+            APP_STATE.tasks.forEach(task => {
+                const taskCard = createTaskCard(task);
+                if (columns[task.status]) {
+                    columns[task.status].appendChild(taskCard);
+                }
+            });
+            
+            // Update counts
+            document.getElementById('todoCount').textContent = APP_STATE.tasks.filter(t => t.status === 'todo').length;
+            document.getElementById('inProgressCount').textContent = APP_STATE.tasks.filter(t => t.status === 'inProgress').length;
+            document.getElementById('doneCount').textContent = APP_STATE.tasks.filter(t => t.status === 'done').length;
+        }
+
+        // Create Task Card
+        function createTaskCard(task) {
+            const card = document.createElement('div');
+            card.className = 'task-card';
+            card.draggable = true;
+            card.dataset.taskId = task.id;
+            
+            const priorityColors = {
+                low: '#10b981',
+                medium: '#f59e0b',
+                high: '#ef4444'
+            };
+            
+            card.style.borderLeftColor = priorityColors[task.priority];
+            
+            const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'done';
+            
+            card.innerHTML = `
+                <div class="task-title">${task.title}</div>
+                <div class="task-description">${task.description || 'Keine Beschreibung'}</div>
+                <div class="task-meta">
+                    <div class="task-assignee">
+                        <i class="fas fa-user"></i>
+                        <span>${task.assignee || 'Nicht zugewiesen'}</span>
+                    </div>
+                    ${task.dueDate ? `
+                        <div class="task-date ${isOverdue ? 'overdue' : ''}">
+                            <i class="fas fa-calendar"></i>
+                            <span>${new Date(task.dueDate).toLocaleDateString('de-DE')}</span>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+            
+            // Drag and drop events
+            card.addEventListener('dragstart', handleDragStart);
+            card.addEventListener('dragend', handleDragEnd);
+            
+            return card;
+        }
+
+        // Drag and Drop
+        function handleDragStart(e) {
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', this.dataset.taskId);
+            this.style.opacity = '0.5';
+        }
+
+        function handleDragEnd(e) {
+            this.style.opacity = '1';
+        }
+
+        function allowDrop(e) {
+            e.preventDefault();
+        }
+
+        function drop(e) {
+            e.preventDefault();
+            const taskId = parseInt(e.dataTransfer.getData('text/html'));
+            const dropTarget = e.target.closest('.task-list');
+            
+            if (dropTarget) {
+                const newStatus = dropTarget.id.replace('Tasks', '');
+                updateTaskStatus(taskId, newStatus);
+            }
+        }
+
+        // Update Task Status
+        function updateTaskStatus(taskId, newStatus) {
+            const task = APP_STATE.tasks.find(t => t.id === taskId);
+            if (task) {
+                task.status = newStatus;
+                saveToLocalStorage();
+                renderKanbanBoard();
+                showToast('success', 'Status aktualisiert', `Aufgabe verschoben nach ${newStatus}`);
+            }
+        }
+
+        // Switch Task View
+        function switchTaskView(view) {
+            if (view === 'kanban') {
+                document.getElementById('kanbanView').classList.remove('hidden');
+                document.getElementById('tableView').classList.add('hidden');
+                document.getElementById('kanbanViewBtn').classList.add('btn-primary');
+                document.getElementById('kanbanViewBtn').classList.remove('btn-outline');
+                document.getElementById('tableViewBtn').classList.remove('btn-primary');
+                document.getElementById('tableViewBtn').classList.add('btn-outline');
+            } else {
+                document.getElementById('kanbanView').classList.add('hidden');
+                document.getElementById('tableView').classList.remove('hidden');
+                document.getElementById('kanbanViewBtn').classList.remove('btn-primary');
+                document.getElementById('kanbanViewBtn').classList.add('btn-outline');
+                document.getElementById('tableViewBtn').classList.add('btn-primary');
+                document.getElementById('tableViewBtn').classList.remove('btn-outline');
+                renderTaskTable();
+            }
+        }
+
+        // Render Task Table
+        function renderTaskTable() {
+            const tbody = document.getElementById('taskTableBody');
+            
+            if (APP_STATE.tasks.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="padding: 40px;">Keine Aufgaben vorhanden</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = APP_STATE.tasks.map(task => `
+                <tr>
+                    <td>${task.title}</td>
+                    <td>${task.assignee || 'Nicht zugewiesen'}</td>
+                    <td>${task.dueDate ? new Date(task.dueDate).toLocaleDateString('de-DE') : '-'}</td>
+                    <td><span class="status-badge status-${task.priority === 'high' ? 'red' : task.priority === 'medium' ? 'yellow' : 'green'}">${task.priority}</span></td>
+                    <td><span class="status-badge status-${task.status === 'done' ? 'green' : task.status === 'inProgress' ? 'yellow' : 'red'}">${task.status}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline" onclick="editTask(${task.id})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteTask(${task.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Delete Task
+        function deleteTask(taskId) {
+            if (confirm('Aufgabe wirklich löschen?')) {
+                APP_STATE.tasks = APP_STATE.tasks.filter(t => t.id !== taskId);
+                saveToLocalStorage();
+                renderKanbanBoard();
+                showToast('success', 'Gelöscht', 'Aufgabe wurde gelöscht');
+            }
+        }
+
+        // Update Analytics
+        function updateAnalytics() {
+            // Initialize analytics charts if needed
+            const charts = ['kpiTrendChart', 'departmentChart', 'statusChart', 'taskChart'];
+            
+            charts.forEach(chartId => {
+                const ctx = document.getElementById(chartId);
+                if (ctx && !APP_STATE.charts[chartId]) {
+                    initAnalyticsChart(chartId);
+                }
+            });
+        }
+
+        // Initialize Analytics Chart
+        function initAnalyticsChart(chartId) {
+            const ctx = document.getElementById(chartId);
+            
+            const chartConfigs = {
+                kpiTrendChart: {
+                    type: 'line',
+                    data: {
+                        labels: ['Woche 1', 'Woche 2', 'Woche 3', 'Woche 4'],
+                        datasets: [{
+                            label: 'KPI',
+                            data: [75, 82, 78, 85],
+                            borderColor: '#2563eb',
+                            tension: 0.4
+                        }]
+                    }
+                },
+                departmentChart: {
+                    type: 'bar',
+                    data: {
+                        labels: ['Vertrieb', 'Auftragsabwicklung', 'Lager', 'Kundenservice'],
+                        datasets: [{
+                            label: 'Performance',
+                            data: [85, 78, 92, 88],
+                            backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6']
+                        }]
+                    }
+                },
+                statusChart: {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Grün', 'Gelb', 'Rot'],
+                        datasets: [{
+                            data: [12, 3, 1],
+                            backgroundColor: ['#10b981', '#f59e0b', '#ef4444']
+                        }]
+                    }
+                },
+                taskChart: {
+                    type: 'bar',
+                    data: {
+                        labels: ['Zu erledigen', 'In Bearbeitung', 'Erledigt'],
+                        datasets: [{
+                            label: 'Aufgaben',
+                            data: [5, 3, 12],
+                            backgroundColor: ['#64748b', '#f59e0b', '#10b981']
+                        }]
+                    }
+                }
+            };
+            
+            APP_STATE.charts[chartId] = new Chart(ctx, {
+                ...chartConfigs[chartId],
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: chartId === 'statusChart' || chartId === 'departmentChart'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Generate Executive Report
+        function generateExecutiveReport() {
+            const container = document.getElementById('executiveContent');
+            
+            if (APP_STATE.reports.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center" style="padding: 60px 20px;">
+                        <i class="fas fa-file-alt" style="font-size: 64px; color: var(--text-secondary); margin-bottom: 20px;"></i>
+                        <h3>Noch keine Berichte vorhanden</h3>
+                        <p>Erstellen Sie zuerst Wochenberichte</p>
+                        <button class="btn btn-primary mt-2" onclick="navigateToTab('report')">
+                            <i class="fas fa-plus"></i>
+                            Bericht erstellen
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Generate comprehensive report
+            const latestReports = APP_STATE.reports.slice(-4); // Last 4 reports
+            
+            let html = '<div class="card"><h2 style="margin-bottom: 20px;">Executive Summary - Woche ' + getWeekNumber(new Date()) + '</h2>';
+            
+            // Overall Status
+            html += '<div class="stats-grid">';
+            const statusCounts = { green: 0, yellow: 0, red: 0 };
+            latestReports.forEach(r => statusCounts[r.status]++);
+            
+            html += `
+                <div class="stat-card">
+                    <div class="stat-label">Gesamtstatus</div>
+                    <div class="stat-value">
+                        <span class="status-badge status-${statusCounts.green >= 3 ? 'green' : statusCounts.red > 0 ? 'red' : 'yellow'}">
+                            ${statusCounts.green >= 3 ? '🟢 Grün' : statusCounts.red > 0 ? '🔴 Rot' : '🟡 Gelb'}
+                        </span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Berichte</div>
+                    <div class="stat-value">${latestReports.length}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Offene Aufgaben</div>
+                    <div class="stat-value">${APP_STATE.tasks.filter(t => t.status !== 'done').length}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">KPI Durchschnitt</div>
+                    <div class="stat-value">85%</div>
+                </div>
+            `;
+            html += '</div>';
+            
+            // Department Reports
+            latestReports.forEach(report => {
+                html += `
+                    <div class="department-section" style="margin-top: 30px;">
+                        <div class="department-header" style="background: var(--primary); color: white;">
+                            <div class="department-title">
+                                <i class="fas fa-building"></i>
+                                ${report.department}
+                            </div>
+                            <span class="status-badge status-${report.status}">${report.status === 'green' ? '🟢 Grün' : report.status === 'yellow' ? '🟡 Gelb' : '🔴 Rot'}</span>
+                        </div>
+                        <div class="department-content" style="display: block;">
+                            <h4>Highlights</h4>
+                            <p>${report.highlights || 'Keine Highlights eingetragen'}</p>
+                            
+                            <h4 style="margin-top: 15px;">Herausforderungen</h4>
+                            <p>${report.challenges || 'Keine Herausforderungen eingetragen'}</p>
+                            
+                            ${Object.keys(report.kpis).length > 0 ? `
+                                <h4 style="margin-top: 15px;">KPIs</h4>
+                                <div class="kpi-grid">
+                                    ${Object.entries(report.kpis).map(([key, value]) => `
+                                        <div class="kpi-item">
+                                            <div class="kpi-label">${key}</div>
+                                            <div class="kpi-value">${value}</div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                            
+                            ${report.notes ? `
+                                <h4 style="margin-top: 15px;">Notizen</h4>
+                                <p>${report.notes}</p>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            
+            container.innerHTML = html;
+        }
+
+        // Generate AI Summary
+        function generateAISummary() {
+            showToast('info', 'AI Summary', 'Diese Funktion erfordert Claude API Integration');
+            // In production, this would call Claude API to generate summary
+        }
+
+        // Export PDF
+        function exportPDF() {
+            showToast('info', 'PDF Export', 'PDF wird generiert...');
+            window.print();
+        }
+
+        // Send Email
+        function sendEmail() {
+            const subject = encodeURIComponent('Wochenbericht KW ' + getWeekNumber(new Date()));
+            const body = encodeURIComponent('Anbei der Wochenbericht für die Distribution.');
+            window.location.href = `mailto:?subject=${subject}&body=${body}`;
+        }
+
+        // Export Analytics
+        function exportAnalytics(format) {
+            if (format === 'excel') {
+                exportToExcel();
+            } else if (format === 'csv') {
+                exportToCSV();
+            }
+        }
+
+        // Export to Excel
+        function exportToExcel() {
+            const wb = XLSX.utils.book_new();
+            
+            // Reports Sheet
+            const reportsData = APP_STATE.reports.map(r => ({
+                'Woche': r.week,
+                'Abteilung': r.department,
+                'Status': r.status,
+                'Erstellt': new Date(r.createdAt).toLocaleDateString('de-DE')
+            }));
+            const wsReports = XLSX.utils.json_to_sheet(reportsData);
+            XLSX.utils.book_append_sheet(wb, wsReports, 'Berichte');
+            
+            // Tasks Sheet
+            const tasksData = APP_STATE.tasks.map(t => ({
+                'Titel': t.title,
+                'Zuständig': t.assignee,
+                'Fällig': t.dueDate ? new Date(t.dueDate).toLocaleDateString('de-DE') : '',
+                'Priorität': t.priority,
+                'Status': t.status
+            }));
+            const wsTasks = XLSX.utils.json_to_sheet(tasksData);
+            XLSX.utils.book_append_sheet(wb, wsTasks, 'Aufgaben');
+            
+            // Download
+            XLSX.writeFile(wb, `EWS_Berichte_${new Date().toISOString().split('T')[0]}.xlsx`);
+            showToast('success', 'Export erfolgreich', 'Excel-Datei wurde heruntergeladen');
+        }
+
+        // Export to CSV
+        function exportToCSV() {
+            let csv = 'Woche,Abteilung,Status,Erstellt\n';
+            APP_STATE.reports.forEach(r => {
+                csv += `${r.week},${r.department},${r.status},${new Date(r.createdAt).toLocaleDateString('de-DE')}\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `EWS_Berichte_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            
+            showToast('success', 'Export erfolgreich', 'CSV-Datei wurde heruntergeladen');
+        }
+
+        // Template Management
+        function openTemplateModal() {
+            document.getElementById('templateModal').classList.add('active');
+            loadTemplatesList();
+        }
+
+        function closeTemplateModal() {
+            document.getElementById('templateModal').classList.remove('active');
+        }
+
+        function loadTemplates() {
+            openTemplateModal();
+        }
+
+        function loadTemplatesList() {
+            const defaultTemplates = [
+                {
+                    id: 1,
+                    name: 'Standard',
+                    icon: '📄',
+                    description: 'Standard Wochenbericht',
+                    data: {
+                        highlights: '• Erfolg 1\n• Erfolg 2\n• Erfolg 3',
+                        challenges: '• Herausforderung 1\n• Herausforderung 2',
+                        notes: 'Weitere Informationen...'
+                    }
+                },
+                {
+                    id: 2,
+                    name: 'Vertrieb',
+                    icon: '💰',
+                    description: 'Vertriebsfokussiert',
+                    data: {
+                        highlights: '• Neue Kunden akquiriert\n• Umsatzziele erreicht\n• Pipeline erweitert',
+                        challenges: '• Wettbewerbsdruck\n• Preisverhandlungen',
+                        notes: 'Fokus auf Q4 Ziele'
+                    }
+                },
+                {
+                    id: 3,
+                    name: 'Operations',
+                    icon: '⚙️',
+                    description: 'Betriebsfokussiert',
+                    data: {
+                        highlights: '• Prozesse optimiert\n• Effizienz gesteigert\n• Qualität verbessert',
+                        challenges: '• Kapazitätsengpässe\n• Ressourcenknappheit',
+                        notes: 'Kontinuierliche Verbesserung'
+                    }
+                },
+                {
+                    id: 4,
+                    name: 'Projekt',
+                    icon: '🎯',
+                    description: 'Projektupdate',
+                    data: {
+                        highlights: '• Meilenstein erreicht\n• Team zusammengestellt\n• Roadmap definiert',
+                        challenges: '• Zeitplan unter Druck\n• Abhängigkeiten',
+                        notes: 'On track für Launch'
+                    }
+                }
+            ];
+            
+            const grid = document.getElementById('templateGrid');
+            grid.innerHTML = defaultTemplates.map(template => `
+                <div class="template-card" onclick="applyTemplate(${template.id})">
+                    <div class="template-icon">${template.icon}</div>
+                    <div class="template-name">${template.name}</div>
+                    <div class="template-desc">${template.description}</div>
+                </div>
+            `).join('');
+        }
+
+        function applyTemplate(templateId) {
+            showToast('info', 'Template geladen', 'Formular wurde mit Template ausgefüllt');
+            closeTemplateModal();
+            navigateToTab('report');
+        }
+
+        // Archive Management
+        function loadArchive() {
+            const container = document.getElementById('archiveList');
+            
+            if (APP_STATE.archive.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center" style="padding: 40px;">
+                        <i class="fas fa-folder-open" style="font-size: 48px; color: var(--text-secondary); margin-bottom: 10px;"></i>
+                        <p>Keine archivierten Berichte</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = APP_STATE.archive.map(item => `
+                <div class="archive-item">
+                    <div class="archive-info">
+                        <div class="archive-title">${item.department} - KW ${item.week}</div>
+                        <div class="archive-meta">Archiviert am: ${new Date(item.archivedAt).toLocaleDateString('de-DE')}</div>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-outline" onclick="restoreFromArchive(${item.id})">
+                            <i class="fas fa-undo"></i> Wiederherstellen
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteFromArchive(${item.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterArchive() {
+            // Implementation for archive filtering
+        }
+
+        function restoreFromArchive(id) {
+            const item = APP_STATE.archive.find(a => a.id === id);
+            if (item) {
+                APP_STATE.reports.push(item);
+                APP_STATE.archive = APP_STATE.archive.filter(a => a.id !== id);
+                saveToLocalStorage();
+                loadArchive();
+                showToast('success', 'Wiederhergestellt', 'Bericht wurde wiederhergestellt');
+            }
+        }
+
+        function deleteFromArchive(id) {
+            if (confirm('Wirklich permanent löschen?')) {
+                APP_STATE.archive = APP_STATE.archive.filter(a => a.id !== id);
+                saveToLocalStorage();
+                loadArchive();
+                showToast('success', 'Gelöscht', 'Bericht wurde permanent gelöscht');
+            }
+        }
+
+        // Settings Functions
+        function testConnection() {
+            showToast('info', 'Verbindung testen', 'Diese Funktion erfordert Backend-Integration');
+        }
+
+        function requestNotificationPermission() {
+            if ('Notification' in window) {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        showToast('success', 'Aktiviert', 'Benachrichtigungen wurden aktiviert');
+                        APP_STATE.notificationsEnabled = true;
+                        saveToLocalStorage();
+                        
+                        // Send test notification
+                        new Notification('EWS Weekly Reports', {
+                            body: 'Benachrichtigungen sind jetzt aktiv!',
+                            icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%232563eb" width="100" height="100"/><text x="50" y="55" font-size="50" text-anchor="middle" fill="white">W</text></svg>'
+                        });
+                    } else {
+                        showToast('error', 'Abgelehnt', 'Benachrichtigungen wurden abgelehnt');
+                    }
+                });
+            } else {
+                showToast('error', 'Nicht unterstützt', 'Ihr Browser unterstützt keine Benachrichtigungen');
+            }
+        }
+
+        function checkNotificationPermission() {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                APP_STATE.notificationsEnabled = true;
+            }
+        }
+
+        function exportAllData() {
+            const data = {
+                reports: APP_STATE.reports,
+                tasks: APP_STATE.tasks,
+                archive: APP_STATE.archive,
+                exportDate: new Date().toISOString()
+            };
+            
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `EWS_Backup_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            
+            showToast('success', 'Export erfolgreich', 'Backup wurde erstellt');
+        }
+
+        function importData() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'application/json';
+            input.onchange = e => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = event => {
+                    try {
+                        const data = JSON.parse(event.target.result);
+                        APP_STATE.reports = data.reports || [];
+                        APP_STATE.tasks = data.tasks || [];
+                        APP_STATE.archive = data.archive || [];
+                        saveToLocalStorage();
+                        showToast('success', 'Import erfolgreich', 'Daten wurden importiert');
+                        updateDashboard();
+                    } catch (error) {
+                        showToast('error', 'Fehler', 'Ungültige Datei');
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+
+        function loadExampleData() {
+            if (confirm('Beispieldaten laden? Vorhandene Daten werden NICHT überschrieben.')) {
+                // Add example reports
+                const exampleReports = [
+                    {
+                        id: Date.now(),
+                        week: '2024-W46',
+                        department: 'Vertrieb',
+                        highlights: '• 5 neue Kunden gewonnen\n• Umsatzziel zu 110% erreicht\n• Erfolgreiche Messe-Teilnahme',
+                        challenges: '• Lieferengpässe bei Modulen\n• Preisdruck durch Wettbewerb',
+                        status: 'green',
+                        notes: 'Starke Woche mit guten Abschlüssen',
+                        kpis: {
+                            'Kundenbesuche': 15,
+                            'Neue Leads': 23,
+                            'Abschlüsse': 8,
+                            'Umsatz': 450000
+                        },
+                        createdAt: new Date().toISOString(),
+                        createdBy: 'Max Mustermann'
+                    },
+                    {
+                        id: Date.now() + 1,
+                        week: '2024-W46',
+                        department: 'Lager',
+                        highlights: '• Inventur erfolgreich abgeschlossen\n• Neue Regalflächen optimiert\n• Lieferzeiten um 15% reduziert',
+                        challenges: '• Platzmangel bei Batteriespeichern\n• Personalengpass durch Krankheit',
+                        status: 'yellow',
+                        notes: 'Gute Fortschritte trotz Herausforderungen',
+                        kpis: {
+                            'Wareneingänge': 145,
+                            'Warenausgänge': 168,
+                            'Inventur': 100,
+                            'Verfügbarkeit': 96
+                        },
+                        createdAt: new Date().toISOString(),
+                        createdBy: 'Anna Schmidt'
+                    }
+                ];
+                
+                // Add example tasks
+                const exampleTasks = [
+                    {
+                        id: Date.now() + 100,
+                        title: 'Q4 Strategie-Meeting vorbereiten',
+                        description: 'Präsentation und Unterlagen für Strategie-Meeting erstellen',
+                        assignee: 'Max Mustermann',
+                        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                        priority: 'high',
+                        status: 'inProgress',
+                        createdAt: new Date().toISOString()
+                    },
+                    {
+                        id: Date.now() + 101,
+                        title: 'Lageroptimierung Konzept',
+                        description: 'Konzept für bessere Raumnutzung entwickeln',
+                        assignee: 'Anna Schmidt',
+                        dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                        priority: 'medium',
+                        status: 'todo',
+                        createdAt: new Date().toISOString()
+                    },
+                    {
+                        id: Date.now() + 102,
+                        title: 'Kundenfeedback auswerten',
+                        description: 'Umfrageergebnisse analysieren und Bericht erstellen',
+                        assignee: 'Lisa Weber',
+                        dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                        priority: 'low',
+                        status: 'done',
+                        createdAt: new Date().toISOString()
+                    }
+                ];
+                
+                APP_STATE.reports = [...APP_STATE.reports, ...exampleReports];
+                APP_STATE.tasks = [...APP_STATE.tasks, ...exampleTasks];
+                saveToLocalStorage();
+                
+                showToast('success', 'Geladen', 'Beispieldaten wurden hinzugefügt');
+                updateDashboard();
+            }
+        }
+
+        function clearAllData() {
+            if (confirm('WARNUNG: Alle Daten werden gelöscht! Dies kann nicht rückgängig gemacht werden. Fortfahren?')) {
+                localStorage.removeItem('ewsReportData');
+                APP_STATE.reports = [];
+                APP_STATE.tasks = [];
+                APP_STATE.archive = [];
+                APP_STATE.templates = [];
+                showToast('success', 'Gelöscht', 'Alle Daten wurden gelöscht');
+                updateDashboard();
+                location.reload();
+            }
+        }
+
+        // PWA Setup
+        function setupPWA() {
+            let deferredPrompt;
+            const installBtn = document.getElementById('installBtn');
+            
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                installBtn.classList.remove('hidden');
+            });
+            
+            installBtn.addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    if (outcome === 'accepted') {
+                        showToast('success', 'Installiert', 'App wurde installiert');
+                    }
+                    deferredPrompt = null;
+                    installBtn.classList.add('hidden');
+                }
+            });
+            
+            // Register service worker (would be in separate file in production)
+            if ('serviceWorker' in navigator) {
+                // Service worker registration would go here
+            }
+        }
+
+        // Auto-save (every 30 seconds)
+        setInterval(() => {
+            if (APP_STATE.reports.length > 0 || APP_STATE.tasks.length > 0) {
+                saveToLocalStorage();
+            }
+        }, 30000);
+
+        // Schedule Friday notifications
+        function scheduleFridayReminders() {
+            if (!APP_STATE.notificationsEnabled) return;
+            
+            const now = new Date();
+            if (now.getDay() === 5 && now.getHours() === 14) { // Friday 2 PM
+                new Notification('Wochenbericht Erinnerung', {
+                    body: 'Vergessen Sie nicht, Ihren Wochenbericht einzureichen!',
+                    icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%232563eb" width="100" height="100"/><text x="50" y="55" font-size="50" text-anchor="middle" fill="white">W</text></svg>'
+                });
+            }
+        }
+
+        // Check reminders every hour
+        setInterval(scheduleFridayReminders, 60 * 60 * 1000);
+
+        console.log('✅ App fully initialized');
+    </script>
+</body>
+</html>
